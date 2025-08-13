@@ -23,7 +23,8 @@ from rsl_rl.modules import (
 )
 from rsl_rl.utils import store_code_state
 
-
+from .Embed import embed_tensors, load_model
+from .MultiviewFusion import concatenate_embeddings
 class OnPolicyRunner:
     """On-policy runner for training and evaluation."""
 
@@ -195,7 +196,11 @@ class OnPolicyRunner:
         # Start training
         start_iter = self.current_learning_iteration
         tot_iter = start_iter + num_learning_iterations
+        
+        # Torch model 
+        model, device = load_model()
         for it in range(start_iter, tot_iter):
+            frameidx = 0
             start = time.time()
             # Rollout
             with torch.inference_mode():
@@ -217,6 +222,25 @@ class OnPolicyRunner:
 
                     # process the step
                     self.alg.process_env_step(rewards, dones, infos)
+                    # Update the storage
+                    frameidx += 1
+                    # save_images_to_file(self.env.unwrapped.scene["camera_bird"].data.output["rgb"]/255.0,f"frames/bird/rgb_out{it:04d}-{frameidx:04d}.png")
+                    # save_images_to_file(self.env.unwrapped.scene["camera_ext1"].data.output["rgb"]/255.0,f"frames/front/rgb_out{it:04d}-{frameidx:04d}.png")
+                    # save_images_to_file(self.env.unwrapped.scene["camera_ext2"].data.output["rgb"]/255.0,f"frames/side/rgb_out{it:04d}-{frameidx:04d}.png")
+                    # save_images_to_file(self.env.unwrapped.scene["camera"].data.output["rgb"]/255.0,f"frames/hand/rgb_out{it:04d}-{frameidx:04d}.png")
+                    
+                    print("------------------------------Start embedding")
+                    # Embed
+                    all_data = embed_tensors([self.env.unwrapped.scene["camera_bird"].data.output["rgb"]/255.0, 
+                                   self.env.unwrapped.scene["camera_ext1"].data.output["rgb"]/255.0,
+                                   self.env.unwrapped.scene["camera_ext2"].data.output["rgb"]/255.0,
+                                   self.env.unwrapped.scene["camera"].data.output["rgb"]/255.0], frameidx, it, model, device)
+                    print("-------------------------------Embedding done")
+                    
+                    print("-------------------------------Starting frame concatenation")
+                    concatenate_embeddings(all_data,it, frameidx)
+
+                    print("--------------------------------Frame concatenation done")
 
                     # Extract intrinsic rewards (only for logging)
                     intrinsic_rewards = self.alg.intrinsic_rewards if self.alg.rnd else None
