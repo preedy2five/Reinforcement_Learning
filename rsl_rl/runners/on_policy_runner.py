@@ -216,8 +216,11 @@ class OnPolicyRunner:
                     obs = self.obs_normalizer(obs)
                     if isinstance(obs, dict) and "image" in obs:
                         image = obs["image"].to(self.device).float() / 255.0  # Normalize to [0,1]
+                        image = image.permute(0, 1, 2, 3)  # Convert to (B, C, H, W)
                         with torch.no_grad():
                             obs = self.alg.policy.encode(image)
+
+                    print("Encoded obs shape:", obs.shape)
 
                     if self.privileged_obs_type is not None:
                         privileged_obs = self.privileged_obs_normalizer(
