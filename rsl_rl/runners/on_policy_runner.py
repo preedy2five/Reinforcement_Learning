@@ -218,7 +218,6 @@ class OnPolicyRunner:
                         image = obs["image"].to(self.device).float() / 255.0  # Normalize to [0,1]
                         with torch.no_grad():
                             obs = self.alg.policy.encode(image)
-                        assert encoded_obs.ndim == 2,
 
                     if self.privileged_obs_type is not None:
                         privileged_obs = self.privileged_obs_normalizer(
