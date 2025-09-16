@@ -214,6 +214,11 @@ class OnPolicyRunner:
                     obs, rewards, dones = (obs.to(self.device), rewards.to(self.device), dones.to(self.device))
                     # perform normalization
                     obs = self.obs_normalizer(obs)
+                    if isinstance(obs, dict) and "image" in obs:
+                        image = obs["image"].to(self.device).float() / 255.0  # Normalize to [0,1]
+                        image = image.permute(0, 3, 1, 2)  # Convert to (B, C, H, W)
+                        with torch.no_grad():
+                            obs = self.alg.policy.encode(image)
                     if self.privileged_obs_type is not None:
                         privileged_obs = self.privileged_obs_normalizer(
                             infos["observations"][self.privileged_obs_type].to(self.device)

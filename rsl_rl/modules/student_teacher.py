@@ -52,7 +52,6 @@ class StudentTeacher(nn.Module):
         super().__init__()
         activation = resolve_nn_activation(activation)
         self.loaded_teacher = False  # indicates if teacher has been loaded
-        
         self.encoder = SimpleCNNEncoder(output_dim = 64)
         mlp_input_dim_s = 64
         mlp_input_dim_t = num_teacher_obs
@@ -171,3 +170,6 @@ class StudentTeacher(nn.Module):
 
     def detach_hidden_states(self, dones=None):
         pass
+
+    def encode(self, image_obs):
+        return self.encoder(image_obs)
