@@ -11,6 +11,24 @@ from torch.distributions import Normal
 
 from rsl_rl.utils import resolve_nn_activation
 
+class SimpleCNNEncoder(nn.Module):
+    def __init__(self, output_dim=64):
+        super().__init__()
+        self.encoder = nn.Sequential(
+            nn.Conv2d(3, 16, kernel_size=5, stride=2),  # (64x64 → 30x30)
+            nn.ELU(),
+            nn.Conv2d(16, 32, kernel_size=3, stride=2), # 30x30 → 14x14
+            nn.ELU(),
+            nn.Conv2d(32, 64, kernel_size=3, stride=2), # 14x14 → 6x6
+            nn.ELU(),
+            nn.Flatten(),  # 64x6x6 = 2304
+            nn.Linear(2304, output_dim),
+            nn.ELU()
+        )
+
+    def forward(self, x):
+        x = x.permute(0, 3, 1, 2).contiguous()  # (B, H, W, C) → (B, C, H, W)
+        return self.encoder(x)
 
 class StudentTeacher(nn.Module):
     is_recurrent = False
@@ -34,8 +52,9 @@ class StudentTeacher(nn.Module):
         super().__init__()
         activation = resolve_nn_activation(activation)
         self.loaded_teacher = False  # indicates if teacher has been loaded
-
-        mlp_input_dim_s = num_student_obs
+        
+        self.encoder = SimpleCNNEncoder(output_dim = 64)
+        mlp_input_dim_s = 64
         mlp_input_dim_t = num_teacher_obs
 
         # student
@@ -91,7 +110,8 @@ class StudentTeacher(nn.Module):
         return self.distribution.entropy().sum(dim=-1)
 
     def update_distribution(self, observations):
-        mean = self.student(observations)
+        encoded = self.encoder(observations)
+        mean = self.student(encoded)
         std = self.std.expand_as(mean)
         self.distribution = Normal(mean, std)
 
@@ -100,7 +120,8 @@ class StudentTeacher(nn.Module):
         return self.distribution.sample()
 
     def act_inference(self, observations):
-        actions_mean = self.student(observations)
+        encoded = self.encoder(observations)
+        actions_mean = self.student(encoded)
         return actions_mean
 
     def evaluate(self, teacher_observations):

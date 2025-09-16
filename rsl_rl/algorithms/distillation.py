@@ -113,6 +113,7 @@ class Distillation:
             for obs, _, _, privileged_actions, dones in self.storage.generator():
 
                 # inference the student for gradient computation
+                import pdb; pdb.set_trace()
                 actions = self.policy.act_inference(obs)
 
                 # behavior cloning loss
