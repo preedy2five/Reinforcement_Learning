@@ -28,7 +28,8 @@ class SimpleCNNEncoder(nn.Module):
 
     def forward(self, x):
         x = x.permute(0, 3, 1, 2).contiguous()  # (B, H, W, C) → (B, C, H, W)
-        return self.encoder(x)
+        encoded = self.encoder(x)
+        return encoded.view(encoded.size(0), -1)
 
 class StudentTeacher(nn.Module):
     is_recurrent = False
