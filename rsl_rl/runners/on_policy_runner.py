@@ -210,6 +210,7 @@ class OnPolicyRunner:
                         # image = image.permute(0, 3, 1, 2)  # (B, H, W, C) → (B, C, H, W)
                         obs["policy"] = self.alg.policy.encode(image)
                     # Sample actions
+                    import pdb; pdb.set_trace()
                     actions = self.alg.act(obs, privileged_obs)
                     # Step the environment
                     obs, rewards, dones, infos = self.env.step(actions.to(self.env.device))
