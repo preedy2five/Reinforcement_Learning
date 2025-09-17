@@ -214,7 +214,7 @@ class OnPolicyRunner:
                     obs, rewards, dones = (obs.to(self.device), rewards.to(self.device), dones.to(self.device))
                     # perform normalization
                     obs = self.obs_normalizer(obs)
-                    image = obs["policy"].to(self.device).float() / 255.0  # Normalize to [0,1]
+                    image = obs.to(self.device).float() / 255.0  # Normalize to [0,1]
                     obs = self.alg.policy.encode(image)
                     print("Encoded obs shape:", obs.shape)
 
