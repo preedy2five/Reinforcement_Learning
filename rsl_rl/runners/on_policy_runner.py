@@ -219,7 +219,7 @@ class OnPolicyRunner:
                         image = image.permute(0, 3, 1, 2)  # (B, H, W, C) → (B, C, H, W)
                         obs["policy"] = self.alg.policy.encode(image)
 
-                    print("Final obs before storing:", {k: v.shape for k, v in obs.items()})
+                    #  print("Final obs before storing:", {k: v.shape for k, v in obs.items()})
 
 
                     if self.privileged_obs_type is not None:
