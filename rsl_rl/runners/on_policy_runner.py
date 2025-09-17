@@ -48,7 +48,9 @@ class OnPolicyRunner:
 
         # resolve dimensions of observations
         obs, extras = self.env.get_observations()
-        num_obs = obs.shape[1]
+        # num_obs = obs.shape[1]
+        num_obs = obs.shape[1:]
+        import pdb; pdb.set_trace()
 
         # resolve type of privileged observations
         if self.training_type == "rl":
