@@ -207,7 +207,7 @@ class OnPolicyRunner:
                 for _ in range(self.num_steps_per_env):
                     if isinstance(obs, dict) and "policy" in obs:
                         image = obs["policy"].to(self.device).float() / 255.0
-                        image = image.permute(0, 3, 1, 2)  # (B, H, W, C) → (B, C, H, W)
+                        # image = image.permute(0, 3, 1, 2)  # (B, H, W, C) → (B, C, H, W)
                         obs["policy"] = self.alg.policy.encode(image)
                     # Sample actions
                     actions = self.alg.act(obs, privileged_obs)
