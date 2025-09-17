@@ -94,7 +94,7 @@ class Distillation:
 
     def process_env_step(self, rewards, dones, infos):
         # record the rewards and dones
-        print("Tranisition obs shape:", self.transition.observations[self.step].shape)
+        print("Tranisition obs shape:", self.transition.observations.shape)
         self.transition.rewards = rewards
         self.transition.dones = dones
         # record the transition
