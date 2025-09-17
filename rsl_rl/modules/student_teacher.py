@@ -27,6 +27,7 @@ class SimpleCNNEncoder(nn.Module):
         )
 
     def forward(self, x):
+        import pdb; pdb.set_trace()
         x = x.permute(0, 3, 1, 2).contiguous()  # (B, H, W, C) → (B, C, H, W)
         encoded = self.encoder(x)
         return encoded.view(encoded.size(0), -1)
