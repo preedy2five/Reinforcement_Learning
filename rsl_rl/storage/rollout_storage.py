@@ -93,6 +93,8 @@ class RolloutStorage:
             raise OverflowError("Rollout buffer overflow! You should call clear() before adding new transitions.")
 
         # Core
+        print("Rollout storage expects obs shape:", self.observations[self.step].shape)
+        print("Incoming tranistion obs shape:", transitions.observations.shape)
         self.observations[self.step].copy_(transition.observations)
         if self.privileged_observations is not None:
             self.privileged_observations[self.step].copy_(transition.privileged_observations)
