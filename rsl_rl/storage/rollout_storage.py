@@ -94,7 +94,7 @@ class RolloutStorage:
 
         # Core
         print("Rollout storage expects obs shape:", self.observations[self.step].shape)
-        print("Incoming tranistion obs shape:", transitions.observations.shape)
+        print("Incoming tranistion obs shape:", transition.observations.shape)
         self.observations[self.step].copy_(transition.observations)
         if self.privileged_observations is not None:
             self.privileged_observations[self.step].copy_(transition.privileged_observations)
