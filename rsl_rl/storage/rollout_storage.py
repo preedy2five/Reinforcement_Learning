@@ -53,7 +53,6 @@ class RolloutStorage:
 
         # Core
         self.observations = torch.zeros(num_transitions_per_env, num_envs, *obs_shape, device=self.device)
-        import pdb; pdb.set_trace()
         if privileged_obs_shape is not None:
             self.privileged_observations = torch.zeros(
                 num_transitions_per_env, num_envs, *privileged_obs_shape, device=self.device
@@ -94,8 +93,6 @@ class RolloutStorage:
             raise OverflowError("Rollout buffer overflow! You should call clear() before adding new transitions.")
 
         # Core
-        print("Rollout storage expects obs shape:", self.observations[self.step].shape)
-        print("Incoming tranistion obs shape:", transition.observations.shape)
         self.observations[self.step].copy_(transition.observations)
         if self.privileged_observations is not None:
             self.privileged_observations[self.step].copy_(transition.privileged_observations)

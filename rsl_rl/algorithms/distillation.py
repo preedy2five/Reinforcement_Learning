@@ -26,8 +26,8 @@ class Distillation:
         gradient_length=15,
         learning_rate=1e-3,
         max_grad_norm=None,
-        loss_type="mse",
-        device="cpu",
+        loss_type="huber",
+        device="cuda:0",
         # Distributed training parameters
         multi_gpu_cfg: dict | None = None,
     ):
@@ -94,7 +94,6 @@ class Distillation:
 
     def process_env_step(self, rewards, dones, infos):
         # record the rewards and dones
-        print("Tranisition obs shape:", self.transition.observations.shape)
         self.transition.rewards = rewards
         self.transition.dones = dones
         # record the transition
@@ -114,7 +113,6 @@ class Distillation:
             for obs, _, _, privileged_actions, dones in self.storage.generator():
 
                 # inference the student for gradient computation
-                import pdb; pdb.set_trace()
                 actions = self.policy.act_inference(obs)
 
                 # behavior cloning loss

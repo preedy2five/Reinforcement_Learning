@@ -48,9 +48,7 @@ class OnPolicyRunner:
 
         # resolve dimensions of observations
         obs, extras = self.env.get_observations()
-        # num_obs = obs.shape[1]
-        num_obs = obs.shape[1:]
-        import pdb; pdb.set_trace()
+        num_obs = obs.shape[1]
 
         # resolve type of privileged observations
         if self.training_type == "rl":
@@ -206,17 +204,10 @@ class OnPolicyRunner:
             start = time.time()
             # Rollout
             with torch.inference_mode():
-                for _ in range(self.num_steps_per_env):
-                    if isinstance(obs, dict) and "policy" in obs:
-                        image = obs["policy"].to(self.device).float() / 255.0
-                        # image = image.permute(0, 3, 1, 2)  # (B, H, W, C) → (B, C, H, W)
-                        obs["policy"] = self.alg.policy.encode(image)
-                    # Sample actions
-                    import pdb; pdb.set_trace()
+                for step_idx in range(self.num_steps_per_env):
                     actions = self.alg.act(obs, privileged_obs)
                     # Step the environment
                     obs, rewards, dones, infos = self.env.step(actions.to(self.env.device))
-                    import pdb; pdb.set_trace()
                     # Move to device
                     obs, rewards, dones = (obs.to(self.device), rewards.to(self.device), dones.to(self.device))
                     # perform normalization
@@ -235,24 +226,6 @@ class OnPolicyRunner:
                     # process the step
                     self.alg.process_env_step(rewards, dones, infos)
                     # Update the storage
-                    frameidx += 1
-                    # save_images_to_file(self.env.unwrapped.scene["camera_bird"].data.output["rgb"]/255.0,f"frames/bird/rgb_out{it:04d}-{frameidx:04d}.png")
-                    # save_images_to_file(self.env.unwrapped.scene["camera_ext1"].data.output["rgb"]/255.0,f"frames/front/rgb_out{it:04d}-{frameidx:04d}.png")
-                    # save_images_to_file(self.env.unwrapped.scene["camera_ext2"].data.output["rgb"]/255.0,f"frames/side/rgb_out{it:04d}-{frameidx:04d}.png")
-                    # save_images_to_file(self.env.unwrapped.scene["camera"].data.output["rgb"]/255.0,f"frames/hand/rgb_out{it:04d}-{frameidx:04d}.png")
-                    
-                    print("------------------------------Start embedding")
-                    # Embed
-                    all_data = embed_tensors([self.env.unwrapped.scene["camera_bird"].data.output["rgb"]/255.0, 
-                                   self.env.unwrapped.scene["camera_ext1"].data.output["rgb"]/255.0,
-                                   self.env.unwrapped.scene["camera_ext2"].data.output["rgb"]/255.0,
-                                   self.env.unwrapped.scene["camera"].data.output["rgb"]/255.0], frameidx, it, model, device)
-                    print("-------------------------------Embedding done")
-                    
-                    print("-------------------------------Starting frame concatenation")
-                    concatenate_embeddings(all_data,it, frameidx)
-
-                    print("--------------------------------Frame concatenation done")
 
                     # Extract intrinsic rewards (only for logging)
                     intrinsic_rewards = self.alg.intrinsic_rewards if self.alg.rnd else None
