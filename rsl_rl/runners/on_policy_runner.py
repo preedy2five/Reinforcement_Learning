@@ -25,6 +25,8 @@ from rsl_rl.utils import store_code_state
 
 from .Embed import embed_tensors, load_model
 from .MultiviewFusion import concatenate_embeddings
+from ..utils.step_logger import StepLogger, AsyncSaver
+from rsl_rl.env.cube_prediction_mv.play import play, load_model
 class OnPolicyRunner:
     """On-policy runner for training and evaluation."""
 
@@ -131,6 +133,8 @@ class OnPolicyRunner:
         self.tot_time = 0
         self.current_learning_iteration = 0
         self.git_status_repos = [rsl_rl.__file__]
+        self.step_logger = StepLogger(log_step_flag=True)
+        self.image_saver = AsyncSaver()
 
     def learn(self, num_learning_iterations: int, init_at_random_ep_len: bool = False):  # noqa: C901
         # initialize writer
@@ -198,7 +202,7 @@ class OnPolicyRunner:
         tot_iter = start_iter + num_learning_iterations
         
         # Torch model 
-        model, device = load_model()
+        model = load_model("/home/sh-d61-cps-hri/hri-pl-frm-mvvd/rsl_rl/rsl_rl/env/cube_prediction_mv/mv_vl_0.1668.pth")
         for it in range(start_iter, tot_iter):
             frameidx = 0
             start = time.time()
@@ -208,7 +212,34 @@ class OnPolicyRunner:
                     # Sample actions
                     actions = self.alg.act(obs, privileged_obs)
                     # Step the environment
-                    obs, rewards, dones, infos = self.env.step(actions.to(self.env.device))
+                    # obs, rewards, dones, infos = self.env.step(actions.to(self.env.device))
+                    
+                    # # change obs 18-20 here
+                    # self.env.unwrapped.scene["camera_bird"].data.output["rgb"]
+                    # self.env.unwrapped.scene["camera_ext1"].data.output["rgb"]
+                    # self.env.unwrapped.scene["camera_ext2"].data.output["rgb"]
+                    
+                    # obs[:,18:21] = play(self.env.unwrapped.scene["camera"].data.output["rgb"],
+                    #      self.env.unwrapped.scene["camera_ext1"].data.output["rgb"],
+                    #      self.env.unwrapped.scene["camera_ext2"].data.output["rgb"], model) #Return predicted position [x,y,z]
+
+
+
+
+
+                    # # Log the updated state after the action
+                    # step_id = it * self.num_steps_per_env + frameidx
+                    # self.step_logger.log_step(obs, actions, rewards, dones, infos, step_id)
+                    
+                    
+                    # Save the frame based on the updated observation (post-action)
+                    # frames_dir = os.path.join(self.log_dir, "training_frames")
+                    # self.image_saver.save_frame(self.env, frameidx, it, frames_dir)
+                    
+                    
+                    # Log step data
+                    # self.step_logger.log_step(obs, actions, rewards, dones, infos, it * self.num_steps_per_env + frameidx)
+
                     # Move to device
                     obs, rewards, dones = (obs.to(self.device), rewards.to(self.device), dones.to(self.device))
                     # perform normalization
@@ -223,24 +254,27 @@ class OnPolicyRunner:
                     # process the step
                     self.alg.process_env_step(rewards, dones, infos)
                     # Update the storage
+                    # frames_dir = os.path.join(self.log_dir, "training_frames")
+                    # self.image_saver.save_frame(self.env, frameidx, it, frames_dir)
+                    
                     frameidx += 1
                     # save_images_to_file(self.env.unwrapped.scene["camera_bird"].data.output["rgb"]/255.0,f"frames/bird/rgb_out{it:04d}-{frameidx:04d}.png")
                     # save_images_to_file(self.env.unwrapped.scene["camera_ext1"].data.output["rgb"]/255.0,f"frames/front/rgb_out{it:04d}-{frameidx:04d}.png")
                     # save_images_to_file(self.env.unwrapped.scene["camera_ext2"].data.output["rgb"]/255.0,f"frames/side/rgb_out{it:04d}-{frameidx:04d}.png")
                     # save_images_to_file(self.env.unwrapped.scene["camera"].data.output["rgb"]/255.0,f"frames/hand/rgb_out{it:04d}-{frameidx:04d}.png")
                     
-                    print("------------------------------Start embedding")
-                    # Embed
-                    all_data = embed_tensors([self.env.unwrapped.scene["camera_bird"].data.output["rgb"]/255.0, 
-                                   self.env.unwrapped.scene["camera_ext1"].data.output["rgb"]/255.0,
-                                   self.env.unwrapped.scene["camera_ext2"].data.output["rgb"]/255.0,
-                                   self.env.unwrapped.scene["camera"].data.output["rgb"]/255.0], frameidx, it, model, device)
-                    print("-------------------------------Embedding done")
+                    # print("------------------------------Start embedding")
+                    # # Embed
+                    # all_data = embed_tensors([self.env.unwrapped.scene["camera_bird"].data.output["rgb"]/255.0, 
+                    #                self.env.unwrapped.scene["camera_ext1"].data.output["rgb"]/255.0,
+                    #                self.env.unwrapped.scene["camera_ext2"].data.output["rgb"]/255.0,
+                    #                self.env.unwrapped.scene["camera"].data.output["rgb"]/255.0], frameidx, it, model, device)
+                    # print("-------------------------------Embedding done")
                     
-                    print("-------------------------------Starting frame concatenation")
-                    concatenate_embeddings(all_data,it, frameidx)
+                    # print("-------------------------------Starting frame concatenation")
+                    # concatenate_embeddings(all_data,it, frameidx)
 
-                    print("--------------------------------Frame concatenation done")
+                    # print("--------------------------------Frame concatenation done")
 
                     # Extract intrinsic rewards (only for logging)
                     intrinsic_rewards = self.alg.intrinsic_rewards if self.alg.rnd else None
@@ -296,6 +330,9 @@ class OnPolicyRunner:
                 if it % self.save_interval == 0:
                     self.save(os.path.join(self.log_dir, f"model_{it}.pt"))
 
+                    log_path = os.path.join(self.log_dir, f"step_logs_iter_{self.current_learning_iteration}.pkl")
+                    self.step_logger.save(log_path)
+
             # Clear episode infos
             ep_infos.clear()
             # Save code state
@@ -310,6 +347,12 @@ class OnPolicyRunner:
         # Save the final model after training
         if self.log_dir is not None and not self.disable_logs:
             self.save(os.path.join(self.log_dir, f"model_{self.current_learning_iteration}.pt"))
+
+            log_path = os.path.join(self.log_dir, f"step_logs_iter_{self.current_learning_iteration}.pkl")
+            self.step_logger.save(log_path)
+        
+        if hasattr(self, 'image_saver'):
+            self.image_saver.shutdown()
 
     def log(self, locs: dict, width: int = 80, pad: int = 35):
         # Compute the collection size
