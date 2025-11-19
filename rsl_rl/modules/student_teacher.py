@@ -33,12 +33,10 @@ class StudentTeacher(nn.Module):
             )
         super().__init__()
         activation = resolve_nn_activation(activation)
-        self.loaded_teacher = False  # indicates if teacher has been loaded
-
         mlp_input_dim_s = num_student_obs
         mlp_input_dim_t = num_teacher_obs
 
-        # student
+        # student-policy
         student_layers = []
         student_layers.append(nn.Linear(mlp_input_dim_s, student_hidden_dims[0]))
         student_layers.append(activation)
@@ -50,7 +48,7 @@ class StudentTeacher(nn.Module):
                 student_layers.append(activation)
         self.student = nn.Sequential(*student_layers)
 
-        # teacher
+        # teacher-policy
         teacher_layers = []
         teacher_layers.append(nn.Linear(mlp_input_dim_t, teacher_hidden_dims[0]))
         teacher_layers.append(activation)
@@ -150,3 +148,6 @@ class StudentTeacher(nn.Module):
 
     def detach_hidden_states(self, dones=None):
         pass
+
+    def encode(self, image_obs):
+        return self.encoder(image_obs)

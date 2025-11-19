@@ -208,8 +208,7 @@ class OnPolicyRunner:
             start = time.time()
             # Rollout
             with torch.inference_mode():
-                for _ in range(self.num_steps_per_env):
-                    # Sample actions
+                for step_idx in range(self.num_steps_per_env):
                     actions = self.alg.act(obs, privileged_obs)
                     # Step the environment
                     # obs, rewards, dones, infos = self.env.step(actions.to(self.env.device))
@@ -244,6 +243,10 @@ class OnPolicyRunner:
                     obs, rewards, dones = (obs.to(self.device), rewards.to(self.device), dones.to(self.device))
                     # perform normalization
                     obs = self.obs_normalizer(obs)
+
+                    #  print("Final obs before storing:", {k: v.shape for k, v in obs.items()})
+
+
                     if self.privileged_obs_type is not None:
                         privileged_obs = self.privileged_obs_normalizer(
                             infos["observations"][self.privileged_obs_type].to(self.device)

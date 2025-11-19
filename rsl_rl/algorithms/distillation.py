@@ -26,8 +26,8 @@ class Distillation:
         gradient_length=15,
         learning_rate=1e-3,
         max_grad_norm=None,
-        loss_type="mse",
-        device="cpu",
+        loss_type="huber",
+        device="cuda:0",
         # Distributed training parameters
         multi_gpu_cfg: dict | None = None,
     ):
